@@ -7,6 +7,7 @@ haproxy.service:
       - pkg: haproxy
     - watch:
       - file: haproxy.config
+{%- if salt['grains.get']('os_family') == 'Debian' %}
   file.managed:
     - name: /etc/default/haproxy
 #TODO: Add switch to turn the service on and off based on pillar configuration.
@@ -15,3 +16,4 @@ haproxy.service:
     - user: "root"
     - group: "root"
     - mode: "0644"
+{%- endif %}

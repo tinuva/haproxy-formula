@@ -19,11 +19,11 @@ global
 {%- endif -%}
 {% if salt['pillar.get']('haproxy:global:daemon', 'no') == True %}
     daemon
-{% endif %}
+{%- endif %}
 {%- if salt['pillar.get']('haproxy:global:stats:enable', 'no') == True %}
     # Stats support is currently limited to socket mode
     stats socket {{ salt['pillar.get']('haproxy:global:stats:socketpath', '/tmp/ha_stats.sock') }}
-{% endif %}
+{%- endif %}
 
 #---------------------------------------------------------------------
 # common defaults that all the 'listen' and 'backend' sections will
@@ -37,25 +37,23 @@ defaults
   {%- for option in salt['pillar.get']('haproxy:defaults:options') %}
     option {{ option }}
   {%- endfor %}
-{% endif %}
+{%- endif %}
 {%- if 'timeouts' in salt['pillar.get']('haproxy:defaults', {}) %}
   {%- for timeout in salt['pillar.get']('haproxy:defaults:timeouts') %}
     timeout {{ timeout }}
   {%- endfor %}
-{% endif %}
+{%- endif %}
 {%- if 'errorfiles' in salt['pillar.get']('haproxy:defaults', {}) %}
   {%- for errorfile in salt['pillar.get']('haproxy:defaults:errorfiles').iteritems() %}
     errorfile {{ errorfile[0] }} {{ errorfile[1] }}
   {%- endfor %}
-{% endif %}
+{%- endif %}
 
 
-
-
+{%- if 'frontends' in salt['pillar.get']('haproxy', {}) %}
 #---------------------------------------------------------------------
 # frontend instances
 #---------------------------------------------------------------------
-{%- if 'frontends' in salt['pillar.get']('haproxy', {}) %}
   {%- for frontend in salt['pillar.get']('haproxy:frontends', {}).iteritems() %}
 frontend {{ frontend[1].name }}
     bind {{ frontend[1].bind }}
@@ -80,15 +78,15 @@ redirect {{ front_redirect }}
     use_backend {{ use_backend }}
       {% endfor %}
     {%- endif %}
-  {% endfor %}
+  {%- endfor %}
 {%- endif %}
 
 
+{%- if 'backends' in salt['pillar.get']('haproxy', {}) %}
 #---------------------------------------------------------------------
 # backend instances
 #---------------------------------------------------------------------
-{%- if 'backends' in salt['pillar.get']('haproxy', {}) %}
-  {%- for backend in salt['pillar.get']('haproxy:backends', {}).iteritems() %} # Backend loop start
+  {%- for backend in salt['pillar.get']('haproxy:backends', {}).iteritems() %}
 backend {{ backend[1].name }}
   {%- if 'redirects' in backend[1] %}
     {%- for redirect in backend[1].redirects %} # Redirect loop start
@@ -115,6 +113,44 @@ redirect {{ redirect }}{% endfor %}
   {%- if 'servers' in backend[1] %}
     {%- for server in backend[1].servers.iteritems() %}
     server {{ server[1].name }} {{ server[1].host }}:{{ server[1].port }} {{ server[1].check }}{% endfor %}
-  {% endif %}
-  {% endfor %} # Backend loop end
-{% endif %}
+  {%- endif %}
+  {%- endfor %}
+{%- endif %}
+
+
+{%- if 'listeners' in salt['pillar.get']('haproxy', {}) %}
+#---------------------------------------------------------------------
+# listen instances
+#---------------------------------------------------------------------
+  {%- for listen in salt['pillar.get']('haproxy:listeners', {}).iteritems() %}
+listen {{ listen[1].name }}
+    bind {{ listen[1].bind }}
+  {%- if 'mode' in listen[1] %}
+    mode {{ listen[1].mode }}
+  {%- endif %}
+  {%- if 'balance' in listen[1] %}
+    balance {{ listen[1].balance }}
+  {%- endif %}
+  {%- if 'options' in listen[1] %}
+    {%- for option in listen[1].options %}
+    option {{ option }}
+    {%- endfor %}
+  {%- endif %}
+  {%- if 'cookie' in listen[1] %}
+    cookie {{ listen[1].cookie }}
+  {%- endif %}
+  {%- if 'stats' in listen[1] %}
+    {%- for option, value in listen[1].stats.iteritems() %}
+      {%- if option == 'enable' and value %}
+    stats enable
+      {%- else %}
+    stats {{ option }} {{ value }}
+      {%- endif %}
+    {%- endfor %}
+  {%- endif %}
+  {%- if 'servers' in listen[1] %}
+    {%- for server in listen[1].servers.iteritems() %}
+    server {{ server[1].name }} {{ server[1].host }}:{{ server[1].port }} {{ server[1].check }}{% endfor %}
+  {%- endif %}
+  {%- endfor %}
+{%- endif %}

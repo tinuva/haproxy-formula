@@ -1,0 +1,10 @@
+# -*- coding: utf-8 -*-
+# vim: ft=yaml
+haproxy:
+  pkg: haproxy
+  config: '/etc/haproxy/haproxy.cfg'
+  service:
+    name: haproxy
+  version: 1.5.12
+  vhash: 4b94b257f16d88c315716b062b22e48a
+  install_from: source
